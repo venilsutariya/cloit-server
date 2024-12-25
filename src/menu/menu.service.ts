@@ -7,6 +7,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class MenuService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Create Menu
   async createMenu(createMenuDto: CreateMenuDto) {
     const { name } = createMenuDto;
     return this.prisma.menu.create({
@@ -24,6 +25,7 @@ export class MenuService {
     });
   }
 
+  // Create Menu Item
   async createMenuItem(createMenuItemDto: CreateMenuItemDto) {
     const { menuId, label, depth, parentId, parentData } = createMenuItemDto;
     return this.prisma.menuItem.create({
@@ -37,6 +39,7 @@ export class MenuService {
     });
   }
 
+  // Get Menu by ID
   async getMenuById(id: string) {
     const menu = await this.prisma.menu.findUnique({
       where: { id },
@@ -50,6 +53,16 @@ export class MenuService {
     const itemsTree = this.buildTree(menu.items);
 
     return { ...menu, items: itemsTree };
+  }
+
+  // Get All Menus (ID and Name)
+  async getAllMenus() {
+    return this.prisma.menu.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 
   private buildTree(items: any[]) {
@@ -74,6 +87,7 @@ export class MenuService {
     return roots;
   }
 
+  // Update Menu Item
   async updateMenuItem(id: string, updateData: Partial<CreateMenuItemDto>) {
     return this.prisma.menuItem.update({
       where: { id },
@@ -81,6 +95,7 @@ export class MenuService {
     });
   }
 
+  // Delete Menu Item
   async deleteMenuItem(id: string) {
     return this.prisma.menuItem.delete({
       where: { id },
