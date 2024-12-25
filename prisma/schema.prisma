@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Menu {
+  id    String     @id @default(uuid())
+  name  String     @unique
+  items MenuItem[]
+}
+
+model MenuItem {
+  id         String     @id @default(uuid())
+  label      String
+  depth      Int
+  parentData String?
+  menuId     String
+  menu       Menu       @relation(fields: [menuId], references: [id])
+  parentId   String?
+  parent     MenuItem?  @relation("MenuItemToParent", fields: [parentId], references: [id])
+  children   MenuItem[] @relation("MenuItemToParent")
+}
