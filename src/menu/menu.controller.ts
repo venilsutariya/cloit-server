@@ -1,7 +1,5 @@
 import { Body, Controller, Post, Get, Param, Put, Delete } from '@nestjs/common';
-import { MenuService } from './menu.service';
-import { CreateMenuDto } from './dto/create-menu.dto';
-import { CreateMenuItemDto } from './dto/create-menu-item.dto';
+import { MenuService } from './menu.service.js';
 
 @Controller('menu')
 export class MenuController {
@@ -9,19 +7,19 @@ export class MenuController {
 
   // Create Menu
   @Post()
-  async createMenu(@Body() createMenuDto: CreateMenuDto) {
+  async createMenu(@Body() createMenuDto) {
     return this.menuService.createMenu(createMenuDto);
   }
 
   // Create Menu Item
   @Post('item')
-  async createMenuItem(@Body() createMenuItemDto: CreateMenuItemDto) {
+  async createMenuItem(@Body() createMenuItemDto) {
     return this.menuService.createMenuItem(createMenuItemDto);
   }
 
   // Get Menu by ID
   @Get(':id')
-  async getMenuById(@Param('id') id: string) {
+  async getMenuById(@Param('id') id) {
     return this.menuService.getMenuById(id);
   }
 
@@ -33,16 +31,13 @@ export class MenuController {
 
   // Update Menu Item
   @Put('item/:id')
-  async updateMenuItem(
-    @Param('id') id: string,
-    @Body() updateMenuItemDto: CreateMenuItemDto,
-  ) {
+  async updateMenuItem(@Param('id') id, @Body() updateMenuItemDto) {
     return this.menuService.updateMenuItem(id, updateMenuItemDto);
   }
 
   // Delete Menu Item
   @Delete('item/:id')
-  async deleteMenuItem(@Param('id') id: string) {
+  async deleteMenuItem(@Param('id') id) {
     return this.menuService.deleteMenuItem(id);
   }
 }
