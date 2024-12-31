@@ -1,51 +1,72 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CreateMenuDto } from './dto/create-menu.dto';
+import { CreateMenuItemDto } from './dto/create-menu-item.dto';
+import { UpdateMenuItemDto } from './dto/update-menu-item.dto';
 
 @Injectable()
 export class MenuService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Create Menu
-  async createMenu(createMenuDto) {
+  async createMenu(createMenuDto: CreateMenuDto) {
     const { name } = createMenuDto;
-    return this.prisma.menu.create({
-      data: {
-        name,
-        items: {
-          create: {
-            label: name,
-            depth: 0,
-            parentData: null,
+
+    if (!name) {
+      throw new BadRequestException('Menu name is required');
+    }
+
+    try {
+      return await this.prisma.menu.create({
+        data: {
+          name,
+          items: {
+            create: {
+              label: name,
+              depth: 0,
+              parentData: null,
+            },
           },
         },
-      },
-      include: { items: true },
-    });
+        include: { items: true },
+      });
+    } catch (error) {
+      throw new BadRequestException('Failed to create menu');
+    }
   }
 
   // Create Menu Item
-  async createMenuItem(createMenuItemDto) {
+  async createMenuItem(createMenuItemDto: CreateMenuItemDto) {
     const { menuId, label, depth, parentId, parentData } = createMenuItemDto;
-    return this.prisma.menuItem.create({
-      data: {
-        menuId,
-        label,
-        depth,
-        parentId,
-        parentData,
-      },
-    });
+
+    if (!menuId || !label) {
+      throw new BadRequestException('Menu ID and label are required');
+    }
+
+    try {
+      return await this.prisma.menuItem.create({
+        data: {
+          menuId,
+          label,
+          depth,
+          parentId,
+          parentData,
+        },
+      });
+    } catch (error) {
+      throw new BadRequestException('Failed to create menu item');
+    }
   }
 
   // Get Menu by ID
-  async getMenuById(id) {
+  async getMenuById(id: string) {
     const menu = await this.prisma.menu.findUnique({
       where: { id },
       include: { items: true },
     });
 
     if (!menu) {
-      throw new Error('Menu not found');
+      throw new NotFoundException('Menu not found');
     }
 
     const itemsTree = this.buildTree(menu.items);
@@ -63,9 +84,9 @@ export class MenuService {
     });
   }
 
-  private buildTree(items) {
-    const map = new Map();
-    const roots = [];
+  private buildTree(items: any[]) {
+    const map = new Map<string, any>();
+    const roots: any[] = [];
 
     items.forEach((item) => {
       map.set(item.id, { ...item, children: [] });
@@ -86,30 +107,44 @@ export class MenuService {
   }
 
   // Update Menu Item
-  async updateMenuItem(id, updateData) {
-    return this.prisma.menuItem.update({
-      where: { id },
-      data: updateData,
-    });
+  async updateMenuItem(id: string, updateData: UpdateMenuItemDto) {
+    const menuItem = await this.prisma.menuItem.findUnique({ where: { id } });
+
+    if (!menuItem) {
+      throw new NotFoundException('Menu item not found');
+    }
+
+    try {
+      return await this.prisma.menuItem.update({
+        where: { id },
+        data: updateData,
+      });
+    } catch (error) {
+      throw new BadRequestException('Failed to update menu item');
+    }
   }
 
   // Delete Menu Item and its children
-  async deleteMenuItem(id) {
+  async deleteMenuItem(id: string) {
     const items = await this.prisma.menuItem.findMany();
 
     const descendants = this.getDescendants(items, id);
 
-    await this.prisma.menuItem.deleteMany({
-      where: {
-        id: { in: descendants },
-      },
-    });
+    try {
+      await this.prisma.menuItem.deleteMany({
+        where: {
+          id: { in: descendants },
+        },
+      });
 
-    return { message: `Menu item and its children have been deleted.` };
+      return { message: `Menu item and its children have been deleted.` };
+    } catch (error) {
+      throw new BadRequestException('Failed to delete menu item and its children');
+    }
   }
 
-  private getDescendants(items, parentId) {
-    const descendants = [];
+  private getDescendants(items: any[], parentId: string) {
+    const descendants: string[] = [];
     const queue = [parentId];
 
     while (queue.length) {
